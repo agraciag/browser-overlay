@@ -534,7 +534,7 @@
 
             connectWebSocket() {
                 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                const wsUrl = `${protocol}//${window.location.hostname}:8081`;
+                const wsUrl = `${protocol}//${window.location.hostname}:33333`;
 
                 this.ws = new WebSocket(wsUrl);
 

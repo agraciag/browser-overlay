@@ -111,7 +111,7 @@ class AIBrowserOverlay {
   async setupAIServer() {
     // Configurar conexión WebSocket con el servidor IA
     try {
-      this.wsConnection = new WebSocket('ws://localhost:8080');
+      this.wsConnection = new WebSocket('ws://localhost:33333');
 
       this.wsConnection.on('open', () => {
         console.log('Conectado al servidor IA');

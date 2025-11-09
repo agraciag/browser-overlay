@@ -5,8 +5,9 @@ const path = require('path');
 const fs = require('fs');
 
 class AIServer {
-  constructor(port = 8080) {
+  constructor(port = 33333) {
     this.port = port;
+    this.httpPort = port + 1; // Puerto para Express
     this.app = express();
     this.wss = null;
     this.clients = new Map();
@@ -66,7 +67,7 @@ class AIServer {
   }
 
   setupWebSocket() {
-    this.wss = new WebSocket.Server({ port: this.port + 1 });
+    this.wss = new WebSocket.Server({ port: this.port });
 
     this.wss.on('connection', (ws, req) => {
       const clientId = this.generateClientId();
@@ -105,7 +106,7 @@ class AIServer {
       });
     });
 
-    console.log(`Servidor WebSocket iniciado en puerto ${this.port + 1}`);
+    console.log(`Servidor WebSocket iniciado en puerto ${this.port}`);
   }
 
   async handleMessage(clientId, data) {
@@ -628,16 +629,16 @@ class AIServer {
   }
 
   startServer() {
-    this.app.listen(this.port, () => {
+    this.app.listen(this.httpPort, () => {
       console.log(`Servidor IA iniciado en puerto ${this.port}`);
-      console.log(`Panel de control: http://localhost:${this.port}/control`);
-      console.log(`API REST: http://localhost:${this.port}/api/`);
+      console.log(`Panel de control: http://localhost:${this.httpPort}/control`);
+      console.log(`API REST: http://localhost:${this.httpPort}/api/`);
     });
   }
 }
 
 // Iniciar servidor
-const server = new AIServer(8080);
+const server = new AIServer(33333);
 
 // Manejar cierre graceful
 process.on('SIGINT', () => {
