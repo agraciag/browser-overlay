@@ -1,0 +1,49 @@
+{
+  "name": "ai-browser-overlay",
+  "version": "1.0.0",
+  "description": "Navegador experimental con capa IA interactiva",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "server": "node src/server/ai-server.js",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "keywords": ["electron", "ai", "browser", "overlay", "ia", "visual"],
+  "author": "AI Browser Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4"
+  },
+  "dependencies": {
+    "ws": "^8.14.2",
+    "sharp": "^0.32.6",
+    "puppeteer": "^21.3.8",
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "build": {
+    "appId": "com.aibrowser.overlay",
+    "productName": "AI Browser Overlay",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}

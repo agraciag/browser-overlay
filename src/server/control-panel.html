@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Browser - Panel de Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.disconnected {
+            background: #f44336;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-group label {
+            font-weight: 500;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .control-group input,
+        .control-group select,
+        .control-group textarea {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .control-group input:focus,
+        .control-group select:focus,
+        .control-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #d32f2f;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .log-container {
+            background: #1e1e1e;
+            color: #f0f0f0;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        .log-entry.info {
+            background: rgba(33, 150, 243, 0.1);
+            border-left: 3px solid #2196f3;
+        }
+
+        .log-entry.success {
+            background: rgba(76, 175, 80, 0.1);
+            border-left: 3px solid #4caf50;
+        }
+
+        .log-entry.error {
+            background: rgba(244, 67, 54, 0.1);
+            border-left: 3px solid #f44336;
+        }
+
+        .timestamp {
+            color: #888;
+            font-size: 10px;
+            margin-right: 10px;
+        }
+
+        .command-preset {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .command-preset:hover {
+            background: #e9ecef;
+        }
+
+        .command-preset h4 {
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .command-preset p {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .command-preview {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 11px;
+            overflow-x: auto;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .status-text {
+            font-weight: 500;
+        }
+
+        .status-text.connected {
+            color: #4caf50;
+        }
+
+        .status-text.disconnected {
+            color: #f44336;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.2s ease;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .analysis-result {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .analysis-result h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .analysis-item {
+            margin-bottom: 8px;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            border-left: 3px solid #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 AI Browser Control Panel</h1>
+        <p>Panel de control para el navegador con capa IA interactiva</p>
+    </div>
+
+    <div class="container">
+        <div class="connection-status">
+            <span class="status-indicator" id="browser-status"></span>
+            <span class="status-text" id="browser-status-text">Conectando al navegador...</span>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
+            <button class="tab" onclick="switchTab('commands')">Comandos</button>
+            <button class="tab" onclick="switchTab('analysis')">Análisis</button>
+            <button class="tab" onclick="switchTab('logs')">Logs</button>
+        </div>
+
+        <div id="dashboard-tab" class="tab-content active">
+            <div class="dashboard">
+                <div class="card">
+                    <h3>
+                        <span class="status-indicator" id="ws-status"></span>
+                        Estado del Servidor
+                    </h3>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="clients-count">0</div>
+                            <div class="stat-label">Clientes</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="uptime">0s</div>
+                            <div class="stat-label">Tiempo Activo</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="commands-count">0</div>
+                            <div class="stat-label">Comandos</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="analysis-count">0</div>
+                            <div class="stat-label">Análisis</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Acciones Rápidas</h3>
+                    <div class="controls">
+                        <button class="btn btn-primary" onclick="sendCommand({ action: 'capture' })">
+                            📸 Capturar Pantalla
+                        </button>
+                        <button class="btn btn-secondary" onclick="sendCommand({ action: 'get_dom' })">
+                            📋 Analizar DOM
+                        </button>
+                        <button class="btn btn-secondary" onclick="sendCommand({ action: 'clear' })">
+                            🧹 Limpiar Overlay
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="commands-tab" class="tab-content">
+            <div class="card">
+                <h3>Comandos Personalizados</h3>
+
+                <div class="control-group">
+                    <label>Comando JSON:</label>
+                    <textarea id="command-input" rows="6" placeholder='{"action": "draw", "type": "arrow", ...}'></textarea>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="sendCustomCommand()">
+                        Enviar Comando
+                    </button>
+                    <button class="btn btn-secondary" onclick="validateCommand()">
+                        Validar JSON
+                    </button>
+                </div>
+
+                <h3 style="margin-top: 30px;">Comandos Predefinidos</h3>
+
+                <div class="command-preset" onclick="sendPresetCommand('highlight-button')">
+                    <h4>🎯 Resaltar Botón Principal</h4>
+                    <p>Resalta el botón principal de llamada a la acción</p>
+                    <div class="command-preview">
+                        {"action": "highlight", "selector": "button.btn-primary", "style": {"outline": "3px solid #ff4081"}}
+                    </div>
+                </div>
+
+                <div class="command-preset" onclick="sendPresetCommand('draw-arrow')">
+                    <h4>➡️ Dibujar Flecha Guía</h4>
+                    <p>Dibuja una flecha para guiar la atención del usuario</p>
+                    <div class="command-preview">
+                        {"action": "arrow", "from": [100, 100], "to": [300, 200], "color": "#ff4081"}
+                    </div>
+                </div>
+
+                <div class="command-preset" onclick="sendPresetCommand('add-text')">
+                    <h4>📝 Añadir Texto Informativo</h4>
+                    <p>Añade un texto descriptivo en una posición específica</p>
+                    <div class="command-preview">
+                        {"action": "text", "text": "Haga clic aquí", "position": [200, 150], "color": "#ffffff"}
+                    </div>
+                </div>
+
+                <div class="command-preset" onclick="sendPresetCommand('highlight-form')">
+                    <h4>📋 Resaltar Formulario</h4>
+                    <p>Resalta todos los campos importantes de un formulario</p>
+                    <div class="command-preview">
+                        {"action": "highlight", "selector": "form input", "style": {"border": "2px solid #4caf50"}}
+                    </div>
+                </div>
+
+                <div class="command-preset" onclick="sendPresetCommand('navigate-demo')">
+                    <h4>🌐 Navegación Guiada</h4>
+                    <p>Demostración de navegación asistida por IA</p>
+                    <div class="command-preview">
+                        {"action": "navigate", "url": "https://example.com"}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="analysis-tab" class="tab-content">
+            <div class="card">
+                <h3>Resultados de Análisis</h3>
+                <div id="analysis-results">
+                    <p style="color: #666; text-align: center; padding: 20px;">
+                        No hay análisis disponibles. Realiza una captura de pantalla o análisis DOM.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div id="logs-tab" class="tab-content">
+            <div class="card">
+                <h3>Logs del Sistema</h3>
+                <div class="btn-group" style="margin-bottom: 15px;">
+                    <button class="btn btn-secondary" onclick="clearLogs()">Limpiar Logs</button>
+                    <button class="btn btn-secondary" onclick="downloadLogs()">Descargar Logs</button>
+                </div>
+                <div class="log-container" id="log-container">
+                    <div class="log-entry info">
+                        <span class="timestamp">00:00:00</span>
+                        Panel de control iniciado
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ControlPanel {
+            constructor() {
+                this.ws = null;
+                this.logs = [];
+                this.stats = {
+                    commands: 0,
+                    analysis: 0,
+                    clients: 0,
+                    uptime: 0
+                };
+                this.init();
+            }
+
+            init() {
+                this.connectWebSocket();
+                this.startStatsUpdate();
+                this.setupEventListeners();
+                this.loadCommandHistory();
+            }
+
+            connectWebSocket() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.hostname}:8081`;
+
+                this.ws = new WebSocket(wsUrl);
+
+                this.ws.onopen = () => {
+                    this.log('Conectado al servidor IA', 'success');
+                    this.updateConnectionStatus(true);
+                    this.ws.send(JSON.stringify({
+                        type: 'control_ready'
+                    }));
+                };
+
+                this.ws.onmessage = (event) => {
+                    try {
+                        const message = JSON.parse(event.data);
+                        this.handleMessage(message);
+                    } catch (error) {
+                        this.log(`Error procesando mensaje: ${error.message}`, 'error');
+                    }
+                };
+
+                this.ws.onclose = () => {
+                    this.log('Desconectado del servidor IA', 'error');
+                    this.updateConnectionStatus(false);
+                    // Intentar reconexión
+                    setTimeout(() => this.connectWebSocket(), 5000);
+                };
+
+                this.ws.onerror = (error) => {
+                    this.log(`Error WebSocket: ${error}`, 'error');
+                };
+            }
+
+            handleMessage(message) {
+                switch (message.type) {
+                    case 'browser_connected':
+                        this.log('Navegador conectado', 'success');
+                        this.updateBrowserStatus(true);
+                        break;
+                    case 'screenshot_analysis':
+                        this.handleScreenshotAnalysis(message);
+                        break;
+                    case 'dom_analysis':
+                        this.handleDOMAnalysis(message);
+                        break;
+                    case 'welcome':
+                        this.log('Servidor IA listo', 'info');
+                        break;
+                    default:
+                        this.log(`Mensaje recibido: ${message.type}`, 'info');
+                }
+
+                this.stats.commands++;
+                this.updateStats();
+            }
+
+            handleScreenshotAnalysis(message) {
+                this.log('Análisis de screenshot recibido', 'success');
+                this.stats.analysis++;
+                this.updateStats();
+
+                // Mostrar resultados en la pestaña de análisis
+                this.showAnalysisResults('Análisis Visual', message.analysis);
+            }
+
+            handleDOMAnalysis(message) {
+                this.log('Análisis DOM recibido', 'success');
+                this.stats.analysis++;
+                this.updateStats();
+
+                // Mostrar resultados en la pestaña de análisis
+                this.showAnalysisResults('Análisis DOM', message.analysis);
+            }
+
+            showAnalysisResults(title, analysis) {
+                const resultsDiv = document.getElementById('analysis-results');
+                const html = `
+                    <div class="analysis-result">
+                        <h4>${title}</h4>
+                        ${this.formatAnalysis(analysis)}
+                    </div>
+                `;
+                resultsDiv.innerHTML = html;
+
+                // Cambiar a la pestaña de análisis
+                switchTab('analysis');
+            }
+
+            formatAnalysis(analysis) {
+                let html = '';
+
+                if (analysis.description) {
+                    html += `<div class="analysis-item"><strong>Descripción:</strong> ${analysis.description}</div>`;
+                }
+
+                if (analysis.layout) {
+                    html += '<div class="analysis-item"><strong>Estructura detectada:</strong><ul>';
+                    Object.keys(analysis.layout).forEach(area => {
+                        html += `<li>${area}: ${JSON.stringify(analysis.layout[area])}</li>`;
+                    });
+                    html += '</ul></div>';
+                }
+
+                if (analysis.elements) {
+                    html += '<div class="analysis-item"><strong>Elementos identificados:</strong><ul>';
+                    analysis.elements.forEach(el => {
+                        html += `<li>${el.type} (confianza: ${(el.confidence * 100).toFixed(1)}%)</li>`;
+                    });
+                    html += '</ul></div>';
+                }
+
+                if (analysis.suggestions) {
+                    html += '<div class="analysis-item"><strong>Sugerencias:</strong><ul>';
+                    analysis.suggestions.forEach(suggestion => {
+                        html += `<li>${suggestion}</li>`;
+                    });
+                    html += '</ul></div>';
+                }
+
+                return html || '<div class="analysis-item">No hay datos de análisis disponibles</div>';
+            }
+
+            sendCommand(command) {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify(command));
+                    this.log(`Comando enviado: ${command.action}`, 'info');
+                } else {
+                    this.log('No hay conexión con el servidor', 'error');
+                }
+            }
+
+            log(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = {
+                    timestamp,
+                    message,
+                    type
+                };
+
+                this.logs.unshift(logEntry);
+                if (this.logs.length > 100) {
+                    this.logs = this.logs.slice(0, 100);
+                }
+
+                this.updateLogDisplay();
+            }
+
+            updateLogDisplay() {
+                const container = document.getElementById('log-container');
+                const html = this.logs.map(log => `
+                    <div class="log-entry ${log.type}">
+                        <span class="timestamp">${log.timestamp}</span>
+                        ${log.message}
+                    </div>
+                `).join('');
+                container.innerHTML = html;
+            }
+
+            updateConnectionStatus(connected) {
+                const indicator = document.getElementById('ws-status');
+                if (connected) {
+                    indicator.classList.remove('disconnected');
+                } else {
+                    indicator.classList.add('disconnected');
+                }
+            }
+
+            updateBrowserStatus(connected) {
+                const indicator = document.getElementById('browser-status');
+                const text = document.getElementById('browser-status-text');
+
+                if (connected) {
+                    indicator.classList.remove('disconnected');
+                    text.textContent = 'Navegador conectado';
+                    text.className = 'status-text connected';
+                } else {
+                    indicator.classList.add('disconnected');
+                    text.textContent = 'Esperando navegador...';
+                    text.className = 'status-text disconnected';
+                }
+            }
+
+            updateStats() {
+                document.getElementById('commands-count').textContent = this.stats.commands;
+                document.getElementById('analysis-count').textContent = this.stats.analysis;
+                document.getElementById('clients-count').textContent = this.stats.clients;
+            }
+
+            startStatsUpdate() {
+                setInterval(() => {
+                    this.stats.uptime++;
+                    const hours = Math.floor(this.stats.uptime / 3600);
+                    const minutes = Math.floor((this.stats.uptime % 3600) / 60);
+                    const seconds = this.stats.uptime % 60;
+
+                    let uptimeText = '';
+                    if (hours > 0) uptimeText += `${hours}h `;
+                    if (minutes > 0) uptimeText += `${minutes}m `;
+                    uptimeText += `${seconds}s`;
+
+                    document.getElementById('uptime').textContent = uptimeText;
+                }, 1000);
+            }
+
+            setupEventListeners() {
+                // Atajos de teclado
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                        switch (e.key) {
+                            case 'Enter':
+                                this.sendCustomCommand();
+                                break;
+                            case 'l':
+                                e.preventDefault();
+                                clearLogs();
+                                break;
+                        }
+                    }
+                });
+            }
+
+            loadCommandHistory() {
+                const history = localStorage.getItem('ai-browser-commands');
+                if (history) {
+                    this.commandHistory = JSON.parse(history);
+                } else {
+                    this.commandHistory = [];
+                }
+            }
+
+            saveCommand(command) {
+                this.commandHistory.unshift({
+                    command,
+                    timestamp: new Date().toISOString()
+                });
+
+                if (this.commandHistory.length > 50) {
+                    this.commandHistory = this.commandHistory.slice(0, 50);
+                }
+
+                localStorage.setItem('ai-browser-commands', JSON.stringify(this.commandHistory));
+            }
+        }
+
+        // Funciones globales para los botones
+        let controlPanel;
+
+        function sendCommand(command) {
+            controlPanel.sendCommand(command);
+            controlPanel.saveCommand(command);
+        }
+
+        function sendCustomCommand() {
+            const input = document.getElementById('command-input');
+            try {
+                const command = JSON.parse(input.value);
+                sendCommand(command);
+                input.value = '';
+            } catch (error) {
+                alert('JSON inválido: ' + error.message);
+            }
+        }
+
+        function validateCommand() {
+            const input = document.getElementById('command-input');
+            try {
+                JSON.parse(input.value);
+                alert('JSON válido ✓');
+            } catch (error) {
+                alert('JSON inválido: ' + error.message);
+            }
+        }
+
+        function sendPresetCommand(preset) {
+            const presets = {
+                'highlight-button': {
+                    action: 'highlight',
+                    selector: 'button.btn-primary, button[type="submit"], .btn',
+                    style: {
+                        outline: '3px solid #ff4081',
+                        outlineOffset: '2px',
+                        boxShadow: '0 0 15px rgba(255, 64, 129, 0.5)'
+                    }
+                },
+                'draw-arrow': {
+                    action: 'arrow',
+                    from: [100, 100],
+                    to: [300, 200],
+                    color: '#ff4081',
+                    width: 3
+                },
+                'add-text': {
+                    action: 'text',
+                    text: '👈 Haga clic aquí para continuar',
+                    position: [200, 150],
+                    color: '#ffffff',
+                    backgroundColor: 'rgba(255, 64, 129, 0.9)',
+                    fontSize: 16
+                },
+                'highlight-form': {
+                    action: 'highlight',
+                    selector: 'form input:not([type="hidden"]), form select, form textarea',
+                    style: {
+                        border: '2px solid #4caf50',
+                        boxShadow: '0 0 10px rgba(76, 175, 80, 0.3)'
+                    }
+                },
+                'navigate-demo': {
+                    action: 'navigate',
+                    url: 'https://example.com'
+                }
+            };
+
+            const command = presets[preset];
+            if (command) {
+                sendCommand(command);
+            }
+        }
+
+        function switchTab(tabName) {
+            // Ocultar todas las pestañas
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Mostrar pestaña seleccionada
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function clearLogs() {
+            controlPanel.logs = [];
+            controlPanel.updateLogDisplay();
+            controlPanel.log('Logs limpiados', 'info');
+        }
+
+        function downloadLogs() {
+            const logsText = controlPanel.logs.map(log =>
+                `[${log.timestamp}] [${log.type.toUpperCase()}] ${log.message}`
+            ).join('\n');
+
+            const blob = new Blob([logsText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ai-browser-logs-${new Date().toISOString().slice(0, 10)}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Inicializar el panel de control
+        document.addEventListener('DOMContentLoaded', () => {
+            controlPanel = new ControlPanel();
+        });
+    </script>
+</body>
+</html>
