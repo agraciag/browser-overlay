@@ -37,8 +37,8 @@ Navegador experimental con capa IA interactiva capaz de analizar páginas web en
 
 ```bash
 # Clonar el repositorio
-git clone https://github.com/tu-usuario/ai-browser-overlay.git
-cd ai-browser-overlay
+git clone https://github.com/agraciag/browser-overlay.git
+cd browser-overlay
 
 # Instalar dependencias
 npm install
@@ -465,11 +465,13 @@ MIT License - ver archivo [LICENSE](LICENSE) para detalles
 - WebSocket por comunicación en tiempo real
 - La comunidad de código abierto
 
-## 📞 Soporte
+## 📞 Contacto y Soporte
 
-- **Issues**: [GitHub Issues](https://github.com/user/repo/issues)
-- **Discusiones**: [GitHub Discussions](https://github.com/user/repo/discussions)
-- **Email**: support@ai-browser.com
+- **LinkedIn**: [Alberto García](https://www.linkedin.com/in/agraciag/)
+- **Articles**: [Artículos Recientes](https://www.linkedin.com/in/agraciag/recent-activity/articles/)
+- **GitHub**: [@agraciag](https://github.com/agraciag)
+- **Issues**: [GitHub Issues](https://github.com/agraciag/browser-overlay/issues)
+- **Discusiones**: [GitHub Discussions](https://github.com/agraciag/browser-overlay/discussions)
 
 ---
 
