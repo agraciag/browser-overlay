@@ -17,7 +17,7 @@ class AIServer {
     this.analysisCache = new Map();
     this.browserProcess = null;
     this.lastBrowserAction = null;
-    this.aiConfig = { provider: 'mock' }; // Configuración IA por defecto
+    this.aiConfig = { provider: 'ollama' }; // Configuración IA por defecto
 
     this.init();
   }
@@ -115,7 +115,7 @@ class AIServer {
     });
 
     this.app.get('/api/ai/config', (req, res) => {
-      res.json(this.aiConfig || { provider: 'mock' });
+      res.json(this.aiConfig || { provider: 'ollama' });
     });
 
     this.app.post('/api/ai/test-analysis', async (req, res) => {
@@ -504,51 +504,19 @@ class AIServer {
 
   // Métodos de análisis
   async analyzeImage(base64Image, url) {
-    const provider = this.aiConfig?.provider || 'mock';
+    const provider = this.aiConfig?.provider || 'ollama';
 
     switch (provider) {
       case 'ollama':
         return await this.analyzeImageWithOllama(base64Image, url);
       case 'openai':
         return await this.analyzeImageWithOpenAI(base64Image, url);
-      case 'mock':
       default:
-        return await this.analyzeImageMock(base64Image, url);
+        return await this.analyzeImageWithOllama(base64Image, url);
     }
   }
 
-  async analyzeImageMock(base64Image, url) {
-    // Simulación de análisis de imagen con IA
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          description: "Página web principal con navegación y contenido principal visible",
-          layout: {
-            header: { x: 0, y: 0, width: 100, height: 10 },
-            navigation: { x: 0, y: 10, width: 100, height: 5 },
-            main: { x: 0, y: 15, width: 70, height: 75 },
-            sidebar: { x: 70, y: 15, width: 30, height: 75 },
-            footer: { x: 0, y: 90, width: 100, height: 10 }
-          },
-          elements: [
-            { type: 'button', text: 'Iniciar sesión', confidence: 0.9 },
-            { type: 'link', text: 'Contáctanos', confidence: 0.8 },
-            { type: 'form', fields: ['email', 'password'], confidence: 0.85 }
-          ],
-          accessibility: {
-            score: 7.5,
-            issues: ['Faltan etiquetas alt en imágenes', 'Contraste bajo en algunos textos']
-          },
-          suggestions: [
-            'Resaltar el botón principal de llamada a la acción',
-            'Mejorar el contraste del texto',
-            'Añadir descripciones a las imágenes'
-          ]
-        });
-      }, 1000);
-    });
-  }
-
+  
   async analyzeImageWithOllama(base64Image, url) {
     const fetch = require('node-fetch');
 
@@ -596,14 +564,13 @@ Devuelve el resultado en formato JSON con coordenadas precisas para los elemento
       }
     } catch (error) {
       console.error('Error en análisis Ollama:', error);
-      // Fallback a análisis mock
-      return await this.analyzeImageMock(base64Image, url);
+      throw error;
     }
   }
 
   async analyzeImageWithOpenAI(base64Image, url) {
     // Placeholder para futura implementación de OpenAI
-    return await this.analyzeImageMock(base64Image, url);
+    throw new Error('OpenAI analysis not implemented yet');
   }
 
   async testAIAnalysis() {
@@ -614,7 +581,7 @@ Devuelve el resultado en formato JSON con coordenadas precisas para los elemento
       const result = await this.analyzeImage(testImage, 'test-url');
       return {
         success: true,
-        provider: this.aiConfig?.provider || 'mock',
+        provider: this.aiConfig?.provider || 'ollama',
         result: result
       };
     } catch (error) {
