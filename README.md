@@ -467,7 +467,7 @@ MIT License - ver archivo [LICENSE](LICENSE) para detalles
 
 ## 📞 Contacto y Soporte
 
-- **LinkedIn**: [Alberto García](https://www.linkedin.com/in/agraciag/)
+- **LinkedIn**: [Alejandro Gracia García](https://www.linkedin.com/in/agraciag/)
 - **Articles**: [Artículos Recientes](https://www.linkedin.com/in/agraciag/recent-activity/articles/)
 - **GitHub**: [@agraciag](https://github.com/agraciag)
 - **Issues**: [GitHub Issues](https://github.com/agraciag/browser-overlay/issues)
