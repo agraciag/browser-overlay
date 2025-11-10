@@ -1,29 +1,35 @@
 # 🤖 AI Browser Overlay
 
-Navegador experimental con capa IA interactiva capaz de analizar páginas web y guiar visualmente a los usuarios mediante anotaciones, resaltados y modificaciones en tiempo real.
+Navegador experimental con capa IA interactiva capaz de analizar páginas web en tiempo real y guiar visualmente a los usuarios mediante anotaciones, resaltados y asistencias con IA.
 
-## 🌟 Características Principales
+## ✨ Características
 
-### Modo Overlay (Capa Visual)
-- **Canvas flotante transparente** sobre el contenido web
+### 🎨 Capa Visual Interactiva
+- **Canvas flotante transparente** sobre cualquier página web
 - **Dibujo en tiempo real**: flechas, círculos, rectángulos, texto
-- **Animaciones suaves** y efectos visuales
+- **Animaciones suaves** y efectos visuales atractivos
 - **Comandos JSON** para control preciso
-- **No interferencia** con la funcionalidad del sitio
+- **Sin interferencia** con la funcionalidad del sitio original
 
-### Modo CSS/DOM (Manipulación Estructural)
-- **Resaltado de elementos** mediante selectores CSS
-- **Modificación de estilos** sin romper el sitio
-- **Inyección de elementos** personalizados
-- **Automatización de interacciones**
-- **Análisis de accesibilidad** integrado
+### 🤖 Inteligencia Artificial Integrada
+- **Análisis visual con Ollama**: Soporte para modelos qwen3-vl:8b
+- **Reconocimiento de elementos**: Identificación automática de componentes UI
+- **Generación de comandos**: La IA sugiere acciones basadas en el contenido
+- **Análisis de capturas**: Procesamiento inteligente de screenshots
+- **Conexión Windows-WSL**: Configuración optimizada para desarrollo
 
-### Backend IA
-- **Servidor WebSocket** para comunicación en tiempo real
-- **Análisis visual** de capturas de pantalla
-- **Procesamiento de estructura DOM**
-- **Comandos de voz** (experimental)
-- **Panel de control web** integrado
+### 🌐 Panel de Control Web
+- **Interfaz moderna y responsiva** para controlar todas las funciones
+- **Preview de capturas** en tiempo real
+- **Comandos predefinidos** para acciones comunes
+- **Logs y diagnóstico** en vivo
+- **Estado del sistema** actualizado constantemente
+
+### 🔄 Comunicación en Tiempo Real
+- **Servidor WebSocket** en puerto 33333
+- **API REST** en puerto 33334
+- **Broadcast de comandos** a múltiples clientes
+- **Sincronización instantánea** entre componentes
 
 ## 🚀 Guía Rápida
 
@@ -31,37 +37,33 @@ Navegador experimental con capa IA interactiva capaz de analizar páginas web y 
 
 ```bash
 # Clonar el repositorio
-git clone <repository-url>
-cd browser_overlay
+git clone https://github.com/tu-usuario/ai-browser-overlay.git
+cd ai-browser-overlay
 
 # Instalar dependencias
 npm install
 
-# Iniciar el servidor IA
-npm run server
-
-# Iniciar el navegador (en otra terminal)
-npm start
+# Configurar Ollama (opcional, para IA local)
+ollama pull qwen3-vl:8b
 ```
 
-### Uso Básico
+### Inicio Rápido
 
-1. **Iniciar el sistema**:
+1. **Iniciar el servidor IA**:
    ```bash
-   # Terminal 1: Servidor IA
    npm run server
+   ```
+   *Servidor disponible en http://localhost:33334*
 
-   # Terminal 2: Navegador
+2. **Iniciar el navegador** (en otra terminal):
+   ```bash
    npm start
    ```
 
-2. **Acceder al panel de control**:
-   Abre http://localhost:8080/control en tu navegador
+3. **Acceder al panel de control**:
+   Abre http://localhost:33334/control
 
-3. **Enviar comandos**:
-   - Usa el panel de control para enviar comandos predefinidos
-   - Crea comandos JSON personalizados
-   - Observa los resultados en tiempo real
+4. **¡Listo para usar!** El navegador se abrirá con GitHub como página inicial
 
 ## 📚 Comandos JSON
 
@@ -326,13 +328,18 @@ El sistema incluye una arquitectura de plugins con:
 ### Variables de Entorno
 ```bash
 # Puerto del servidor IA
-AI_SERVER_PORT=8080
+WS_PORT=33333
+HTTP_PORT=33334
 
 # Modo desarrollo
 NODE_ENV=development
 
 # Nivel de logs
 LOG_LEVEL=info
+
+# Configuración Ollama
+OLLAMA_URL=http://host.docker.internal:11434
+OLLAMA_MODEL=qwen3-vl:8b
 ```
 
 ### Configuración del Navegador
@@ -382,7 +389,11 @@ npx electron --version
 npm run server
 
 # Verificar firewall/puertos
-netstat -an | grep 8080
+netstat -an | grep 33333
+netstat -an | grep 33334
+
+# Verificar Ollama (si se usa IA local)
+curl http://host.docker.internal:11434/api/tags
 ```
 
 **Comandos no funcionan**:

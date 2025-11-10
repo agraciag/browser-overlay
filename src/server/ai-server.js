@@ -15,6 +15,9 @@ class AIServer {
     this.aiModels = new Map();
     this.commandHistory = [];
     this.analysisCache = new Map();
+    this.browserProcess = null;
+    this.lastBrowserAction = null;
+    this.aiConfig = { provider: 'mock' }; // Configuración IA por defecto
 
     this.init();
   }
@@ -56,6 +59,130 @@ class AIServer {
         const analysis = await this.analyzeImage(req.body.image, req.body.prompt);
         res.json(analysis);
       } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    // Endpoints para controlar el navegador
+    this.app.post('/api/browser/start', (req, res) => {
+      try {
+        const { initialUrl } = req.body;
+        this.startBrowser(initialUrl);
+        res.json({
+          status: 'starting',
+          message: `Iniciando navegador con URL: ${initialUrl || 'https://google.com'}`
+        });
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    this.app.post('/api/browser/stop', (req, res) => {
+      try {
+        this.stopBrowser();
+        res.json({ status: 'stopping', message: 'Deteniendo navegador...' });
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    this.app.post('/api/browser/restart', (req, res) => {
+      try {
+        this.restartBrowser();
+        res.json({ status: 'restarting', message: 'Reiniciando navegador...' });
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    this.app.get('/api/browser/status', (req, res) => {
+      res.json({
+        running: this.isBrowserRunning(),
+        connected: !!this.browserConnection,
+        lastAction: this.lastBrowserAction || 'none'
+      });
+    });
+
+    // Endpoints para configuración IA
+    this.app.post('/api/ai/config', (req, res) => {
+      try {
+        this.aiConfig = req.body;
+        console.log('Configuración IA actualizada:', this.aiConfig);
+        res.json({ status: 'success', message: 'Configuración IA guardada' });
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    this.app.get('/api/ai/config', (req, res) => {
+      res.json(this.aiConfig || { provider: 'mock' });
+    });
+
+    this.app.post('/api/ai/test-analysis', async (req, res) => {
+      try {
+        const result = await this.testAIAnalysis();
+        res.json(result);
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    this.app.post('/api/dom', (req, res) => {
+      try {
+        console.log('📋 Solicitud de análisis DOM recibida');
+        // Enviar comando al navegador para obtener DOM
+        this.broadcast({
+          type: 'command',
+          action: 'get_dom',
+          timestamp: Date.now()
+        }, 'browser');
+
+        res.json({
+          status: 'success',
+          message: 'Análisis DOM solicitado al navegador'
+        });
+      } catch (error) {
+        console.error('Error en análisis DOM:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    this.app.post('/api/capture', (req, res) => {
+      try {
+        console.log('📸 Solicitud de captura recibida');
+        // Enviar comando al navegador para capturar pantalla
+        this.broadcast({
+          type: 'command',
+          action: 'capture',
+          timestamp: Date.now()
+        }, 'browser');
+
+        res.json({
+          status: 'success',
+          message: 'Captura solicitada al navegador'
+        });
+      } catch (error) {
+        console.error('Error en captura:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    this.app.post('/api/clear', (req, res) => {
+      try {
+        console.log('🧹 Solicitud de limpiar overlay recibida');
+        // Enviar comando al navegador para limpiar overlay
+        this.broadcast({
+          type: 'command',
+          action: 'clear',
+          timestamp: Date.now()
+        }, 'browser');
+
+        res.json({
+          status: 'success',
+          message: 'Comando clear enviado al navegador'
+        });
+      } catch (error) {
+        console.error('Error en clear:', error);
         res.status(500).json({ error: error.message });
       }
     });
@@ -159,6 +286,9 @@ class AIServer {
         case 'voice_command':
           await this.handleVoiceCommand(clientId, message);
           break;
+        case 'command':
+          await this.handleCommand(clientId, message);
+          break;
         default:
           console.log(`Mensaje de tipo ${message.type} recibido de ${clientId}`);
       }
@@ -203,6 +333,14 @@ class AIServer {
           await this.sleep(500); // Pequeña pausa entre comandos
         }
       }
+
+      // Enviar screenshot original a todos los clientes de control para preview
+      this.broadcast({
+        type: 'screenshot',
+        data: message.data,
+        url: message.url,
+        timestamp: message.timestamp
+      }, 'control');
 
       // Enviar análisis a todos los clientes de control
       this.broadcast({
@@ -328,11 +466,59 @@ class AIServer {
     }
   }
 
+  async handleCommand(clientId, message) {
+    console.log('Comando recibido del control panel:', message.action || message.type);
+
+    try {
+      // Reenviar comando al navegador si está conectado
+      if (this.browserConnection) {
+        this.sendToClient(this.browserConnection.id, message);
+        console.log(`Comando ${message.action || message.type} reenviado al navegador`);
+
+        // Confirmar al control panel
+        this.sendToClient(clientId, {
+          type: 'command_processed',
+          action: message.action || message.type,
+          status: 'success',
+          timestamp: Date.now()
+        });
+      } else {
+        console.log('Navegador no conectado, no se puede reenviar comando');
+        this.sendToClient(clientId, {
+          type: 'command_error',
+          action: message.action || message.type,
+          error: 'Navegador no conectado',
+          timestamp: Date.now()
+        });
+      }
+    } catch (error) {
+      console.error('Error procesando comando:', error);
+      this.sendToClient(clientId, {
+        type: 'command_error',
+        action: message.action || message.type,
+        error: error.message,
+        timestamp: Date.now()
+      });
+    }
+  }
+
   // Métodos de análisis
   async analyzeImage(base64Image, url) {
-    // Simulación de análisis de imagen con IA
-    // En un caso real, aquí se llamaría a una API de IA como GPT Vision o similar
+    const provider = this.aiConfig?.provider || 'mock';
 
+    switch (provider) {
+      case 'ollama':
+        return await this.analyzeImageWithOllama(base64Image, url);
+      case 'openai':
+        return await this.analyzeImageWithOpenAI(base64Image, url);
+      case 'mock':
+      default:
+        return await this.analyzeImageMock(base64Image, url);
+    }
+  }
+
+  async analyzeImageMock(base64Image, url) {
+    // Simulación de análisis de imagen con IA
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
@@ -361,6 +547,82 @@ class AIServer {
         });
       }, 1000);
     });
+  }
+
+  async analyzeImageWithOllama(base64Image, url) {
+    const fetch = require('node-fetch');
+
+    try {
+      const ollamaUrl = this.aiConfig?.ollama?.url || 'http://host.docker.internal:11434';
+      const model = this.aiConfig?.ollama?.model || 'qwen3-vl:8b';
+      const prompt = this.aiConfig?.customPrompt || `Analiza esta captura de pantalla de una página web e identifica:
+1. Elementos interactivos principales (botones, enlaces, formularios) con sus coordenadas
+2. Estructura de la página (header, navegación, contenido principal, sidebar, footer)
+3. Posibles problemas de accesibilidad
+4. Sugerencias para mejorar la experiencia del usuario
+
+Devuelve el resultado en formato JSON con coordenadas precisas para los elementos identificados.`;
+
+      const response = await fetch(`${ollamaUrl}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: model,
+          prompt: prompt,
+          images: [base64Image],
+          stream: false,
+          format: 'json'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Ollama API error: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      try {
+        return JSON.parse(result.response);
+      } catch (parseError) {
+        // Si no es JSON válido, crear una estructura básica
+        return {
+          description: result.response,
+          layout: {},
+          elements: [],
+          accessibility: {},
+          suggestions: [],
+          raw_response: result.response
+        };
+      }
+    } catch (error) {
+      console.error('Error en análisis Ollama:', error);
+      // Fallback a análisis mock
+      return await this.analyzeImageMock(base64Image, url);
+    }
+  }
+
+  async analyzeImageWithOpenAI(base64Image, url) {
+    // Placeholder para futura implementación de OpenAI
+    return await this.analyzeImageMock(base64Image, url);
+  }
+
+  async testAIAnalysis() {
+    // Generar imagen de prueba simple
+    const testImage = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+
+    try {
+      const result = await this.analyzeImage(testImage, 'test-url');
+      return {
+        success: true,
+        provider: this.aiConfig?.provider || 'mock',
+        result: result
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
   }
 
   analyzeDOM(domData) {
@@ -626,6 +888,84 @@ class AIServer {
     });
 
     console.log(`Modelos IA cargados: ${this.aiModels.size}`);
+  }
+
+  // Métodos de control del navegador
+  startBrowser(initialUrl = null) {
+    if (this.browserProcess && this.browserProcess.pid) {
+      console.log('El navegador ya está en ejecución');
+      return;
+    }
+
+    console.log('Iniciando navegador...');
+    const { spawn } = require('child_process');
+
+    // Preparar argumentos del proceso
+    const args = ['start'];
+    if (initialUrl) {
+      args.push('--url=' + initialUrl);
+      console.log(`URL inicial especificada: ${initialUrl}`);
+    }
+
+    this.browserProcess = spawn('npm', args, {
+      cwd: path.join(__dirname, '../..'),
+      detached: true,
+      stdio: 'ignore'
+    });
+
+    this.browserProcess.unref();
+    this.lastBrowserAction = 'start';
+
+    console.log(`Navegador iniciado con PID: ${this.browserProcess.pid}`);
+
+    // Notificar a clientes
+    this.broadcast({
+      type: 'browser_status',
+      status: 'starting',
+      pid: this.browserProcess.pid
+    }, 'control');
+  }
+
+  stopBrowser() {
+    if (!this.browserProcess || !this.browserProcess.pid) {
+      console.log('El navegador no está en ejecución');
+      return;
+    }
+
+    console.log('Deteniendo navegador...');
+
+    // Intentar detener elegantemente
+    if (process.platform === 'win32') {
+      this.browserProcess.kill('SIGINT');
+    } else {
+      this.browserProcess.kill('SIGTERM');
+    }
+
+    this.browserProcess = null;
+    this.lastBrowserAction = 'stop';
+
+    console.log('Navegador detenido');
+
+    // Notificar a clientes
+    this.broadcast({
+      type: 'browser_status',
+      status: 'stopped'
+    }, 'control');
+  }
+
+  restartBrowser() {
+    console.log('Reiniciando navegador...');
+    this.stopBrowser();
+
+    setTimeout(() => {
+      this.startBrowser();
+    }, 2000);
+
+    this.lastBrowserAction = 'restart';
+  }
+
+  isBrowserRunning() {
+    return this.browserProcess && this.browserProcess.pid && !this.browserProcess.killed;
   }
 
   startServer() {

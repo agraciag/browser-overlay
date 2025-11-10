@@ -29,6 +29,11 @@
             z-index: 1000;
         }
 
+        /* Allow clicks through the overlay except on drawn elements */
+        .interactive-overlay {
+            pointer-events: auto;
+        }
+
         .ai-tooltip {
             position: absolute;
             background: rgba(33, 33, 33, 0.95);

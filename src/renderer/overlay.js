@@ -42,7 +42,9 @@ class AIOverlay {
     }
 
     handleCommand(command) {
-        console.log('Overlay recibió comando:', command);
+        console.log('🎯 Overlay recibió comando:', command);
+        console.log('🎯 Acción:', command.action);
+        console.log('🎯 Timestamp:', Date.now());
 
         switch (command.action) {
             case 'draw':
@@ -146,6 +148,8 @@ class AIOverlay {
     }
 
     handleTextCommand(command) {
+        console.log('📝 Procesando comando de texto:', command);
+
         const text = {
             type: 'text',
             id: command.id || this.generateId(),
@@ -161,8 +165,10 @@ class AIOverlay {
             timestamp: Date.now()
         };
 
+        console.log('📝 Texto a dibujar:', text);
         this.drawings.push(text);
         this.redrawAll();
+        console.log('📝 Texto dibujado, total drawings:', this.drawings.length);
     }
 
     handleHighlightCommand(command) {
@@ -307,11 +313,13 @@ class AIOverlay {
     }
 
     drawText(text) {
+        console.log('🎨 Dibujando texto:', text);
         const { text: content, x, y, color, fontSize, fontFamily, backgroundColor, padding, borderRadius } = text;
 
         this.ctx.save();
         this.ctx.font = `${fontSize}px ${fontFamily}`;
         const textMetrics = this.ctx.measureText(content);
+        console.log('🎨 Medidas del texto:', { textWidth: textMetrics.width, fontSize, x, y });
 
         const textWidth = textMetrics.width;
         const textHeight = fontSize;
@@ -332,6 +340,7 @@ class AIOverlay {
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText(content, x, y);
+        console.log('🎨 Texto dibujado en canvas:', { content, x, y, color });
 
         this.ctx.restore();
     }
@@ -385,9 +394,21 @@ class AIOverlay {
     }
 
     clearCanvas() {
+        console.log('🧹 Limpiando canvas - drawings antes:', this.drawings.length);
+        console.log('🧹 Limpiando canvas - animations antes:', this.animations.length);
+
         this.drawings = [];
         this.animations = [];
+
+        // Forzar limpieza completa del canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Doble limpieza para asegurar que no queda nada
+        this.ctx.fillStyle = 'transparent';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        console.log('✅ Canvas limpiado completamente');
     }
 
     clearElement(id) {
